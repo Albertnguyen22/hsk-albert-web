@@ -1,0 +1,46 @@
+# Bản sao của web HSK Albert trên github.io (không gắn tên miền), để học ở những nơi chặn tên miền mới.
+# Mỗi giờ (hoặc khi bấm "Run workflow"), lấy bản mới nhất từ repo hsk-albert và đăng lên GitHub Pages của repo này.
+# Chỉ cần cập nhật web ở repo hsk-albert như bình thường; repo này tự theo.
+name: Đồng bộ từ hsk-albert
+
+on:
+  schedule:
+    - cron: '17 * * * *'     # mỗi giờ, vào phút 17
+  workflow_dispatch:          # nút "Run workflow" để đồng bộ ngay
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Lấy bản web mới nhất từ hsk-albert
+        uses: actions/checkout@v4
+        with:
+          repository: Albertnguyen22/hsk-albert
+          path: site
+
+      - name: Bỏ file tên miền và thư mục của Git (bản này chạy trên github.io)
+        run: |
+          rm -f site/CNAME
+          rm -rf site/.git site/.github
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Đăng lên GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
